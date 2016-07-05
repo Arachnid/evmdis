@@ -10,6 +10,40 @@ type Expression interface {
 	String() string
 }
 
+var opcodeFormatStrings = map[OpCode]string {
+	ADD: "%v + %v",
+	MUL: "%v * %v",
+	SUB: "%v - %v",
+	DIV: "%v / %v",
+	MOD: "%v %% %v",
+	EXP: "%v ** %v",
+	NOT: "!%v",
+	LT: "%v < %v",
+	GT: "%v > %v",
+	EQ: "%v == %v",
+	ISZERO: "%v == 0",
+	AND: "%v & %v",
+	OR: "%v | %v",
+	XOR: "%v ^ %v",
+}
+
+var operatorPrecedences = map[OpCode]int {
+	NOT: 0,
+	EXP: 1,
+	MUL: 2,
+	DIV: 2,
+	MOD: 2,
+	ADD: 3,
+	SUB: 3,
+	AND: 4,
+	XOR: 5,
+	OR: 6,
+	LT: 7,
+	GT: 7,
+	EQ: 7,
+	ISZERO: 7,
+}
+
 type InstructionExpression struct {
 	Inst Instruction
 	Arguments []Expression
@@ -18,6 +52,16 @@ type InstructionExpression struct {
 func (self *InstructionExpression) String() string {
 	if self.Inst.Op.IsPush() {
 		return fmt.Sprintf("0x%X", self.Inst.Arg)
+	} else if format, ok := opcodeFormatStrings[self.Inst.Op]; ok {
+		args := make([]interface{}, 0, len(self.Arguments))
+		for _, arg := range self.Arguments {
+			if ie, ok := arg.(*InstructionExpression); ok && operatorPrecedences[ie.Inst.Op] > operatorPrecedences[self.Inst.Op] {
+				args = append(args, fmt.Sprintf("(%s)", arg.String()))
+			} else {
+				args = append(args, arg.String())
+			}
+		}
+		return fmt.Sprintf(format, args...)
 	} else {
 		args := make([]string, 0, len(self.Arguments))
 		for _, arg := range self.Arguments {
@@ -87,7 +131,7 @@ func BuildExpressions(prog *Program) {
 				if len(dupOf) == 1 && lifted[*dupOf.First()] {
 					delete(lifted, *dupOf.First())
 				}
-				
+
 				// Count number of non-lifted elements between the operands
 				count := 0
 				for i := 0; i < len(reaching) - 1; i++ {
