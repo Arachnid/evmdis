@@ -172,7 +172,11 @@ func (self ReachesDefinition) String() string {
 
 func PerformReachesAnalysis(prog *Program) {
 	for _, block := range prog.Blocks {
-		for i, inst :=range  block.Instructions {
+		for i, inst := range block.Instructions {
+			if inst.Op.IsSwap() || inst.Op.IsDup() {
+				continue
+			}
+
 			var reaching ReachingDefinition
 			inst.Annotations.Get(&reaching)
 			if reaching != nil {
