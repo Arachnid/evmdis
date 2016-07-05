@@ -24,10 +24,18 @@ func main() {
     	log.Fatalf("Error performing reaching analysis: %v", err)
     }
     evmdis.PerformReachesAnalysis(program)
+    evmdis.CreateLabels(program)
     evmdis.BuildExpressions(program)
 
     for _, block := range program.Blocks {
     	offset := block.Offset
+
+    	var label *evmdis.JumpLabel
+    	block.Annotations.Get(&label)
+    	if label != nil {
+    		fmt.Printf("%v\n", label)
+    	}
+
     	for _, instruction := range block.Instructions {
     		var reaching evmdis.ReachingDefinition
     		instruction.Annotations.Get(&reaching)

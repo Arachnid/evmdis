@@ -93,6 +93,61 @@ func (self *DupExpression) String() string {
 	return fmt.Sprintf("DUP%d", self.count)
 }
 
+type JumpLabel struct {
+	id int
+}
+
+func (self *JumpLabel) String() string {
+	return fmt.Sprintf(":label%d", self.id)
+}
+
+func CreateLabels(prog *Program) {
+	counter := 0
+
+	for _, block := range prog.Blocks {
+		nextInstruction: for i, inst := range block.Instructions {
+			if !inst.Op.IsPush() {
+				continue
+			}
+
+			// Skip any pushes that aren't found in the jump table
+			targetBlock := prog.JumpDestinations[int(inst.Arg.Int64())]
+			if targetBlock == nil {
+				continue
+			}
+
+			// Skip any pushes that aren't consumed exclusively as jump targets
+			var reaches ReachesDefinition
+			inst.Annotations.Get(&reaches)
+			for _, pointer := range reaches {
+				targetInst := pointer.Get()
+				if targetInst.Op == JUMPI {
+					// Check if it's the second argument
+					var reaching ReachingDefinition
+					targetInst.Annotations.Get(&reaching)
+					if !reaching[0][InstructionPointer{block, i}] {
+						continue nextInstruction
+					}
+				} else if targetInst.Op != JUMP {
+					continue nextInstruction
+				}
+			}
+
+			// Fetch or create a jump label
+			var label *JumpLabel
+			targetBlock.Annotations.Get(&label)
+			if label == nil {
+				label = &JumpLabel{counter}
+				targetBlock.Annotations.Set(&label)
+				counter += 1
+			}
+
+			expression := Expression(label)
+			inst.Annotations.Set(&expression)
+		}
+	}
+}
+
 func BuildExpressions(prog *Program) {
 	for _, block := range prog.Blocks {
 		lifted := make(InstructionPointerSet)
@@ -144,34 +199,42 @@ func BuildExpressions(prog *Program) {
 
 				var expression Expression = &DupExpression{count + 1}
 				inst.Annotations.Set(&expression)
-			} else if inst.Op == POP {
+			} else if inst.Op == POP && (len(reaching[0]) > 1 || !lifted[*reaching[0].First()]) {
 				var expression Expression = &PopExpression{}
 				inst.Annotations.Set(&expression)
 			} else {
-				args := make([]Expression, 0, inst.Op.StackReads())
-				// Assemble a subexpression for each argument
-				for _, pointers := range reaching {
-					if len(pointers) > 1 || !lifted[*pointers.First()] {
-						// If there's more than one definition reaching the argument
-						// or it's not in our set of expression fragments, represent it
-						// as a stack pop.
-						args = append(args, &PopExpression{})
-					} else {
-						// Inline this argument's expression
-						sourcePointer := pointers.First()
-						var sourceExpression Expression
-						sourcePointer.Get().Annotations.Pop(&sourceExpression)
-						args = append(args, sourceExpression)
-						delete(lifted, *sourcePointer)
-					}
-				}
+				var expression Expression
+				inst.Annotations.Get(&expression)
 
-				var expression Expression = &InstructionExpression{inst, args}
-				inst.Annotations.Set(&expression)
+				// Don't recalculate expressions found by previous passes
+				if expression == nil {
+					args := make([]Expression, 0, inst.Op.StackReads())
+					// Assemble a subexpression for each argument
+					for _, pointers := range reaching {
+						if len(pointers) > 1 || !lifted[*pointers.First()] {
+							// If there's more than one definition reaching the argument
+							// or it's not in our set of expression fragments, represent it
+							// as a stack pop.
+							args = append(args, &PopExpression{})
+						} else {
+							// Inline this argument's expression
+							sourcePointer := pointers.First()
+							var sourceExpression Expression
+							sourcePointer.Get().Annotations.Pop(&sourceExpression)
+							args = append(args, sourceExpression)
+							delete(lifted, *sourcePointer)
+						}
+					}
+
+					expression = &InstructionExpression{inst, args}
+					inst.Annotations.Set(&expression)
+				}
 
 				var reaches ReachesDefinition
 				inst.Annotations.Get(&reaches)
 				if len(reaches) == 1 && reaches[0].OriginBlock == block {
+					ptr := InstructionPointer{block, i}
+					log.Printf("Lifting %v; only consumed at %v", ptr.String(), reaches[0].String())
 					// 'Lift' this definition out of the stack, since we know it'll be consumed
 					// later in this block (and only there)
 					lifted[InstructionPointer{block, i}] = true
@@ -179,7 +242,7 @@ func BuildExpressions(prog *Program) {
 			}
 		}
 		if len(lifted) != 0 {
-			log.Fatalf("Expected all lifted arguments to be consumed by end of block (%v left)", len(lifted))
+			log.Fatalf("Expected all lifted arguments to be consumed by end of block: %v", lifted)
 		}
 	}
 }
