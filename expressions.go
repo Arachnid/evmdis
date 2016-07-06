@@ -95,6 +95,7 @@ func (self *DupExpression) String() string {
 
 type JumpLabel struct {
 	id int
+	refCount int
 }
 
 func (self *JumpLabel) String() string {
@@ -102,8 +103,13 @@ func (self *JumpLabel) String() string {
 }
 
 func CreateLabels(prog *Program) {
-	counter := 0
+	// Create initial labels, one per block
+	for _, block := range prog.Blocks {
+		label := &JumpLabel{}
+		block.Annotations.Set(&label)
+	}
 
+	// Find all labels and create references
 	for _, block := range prog.Blocks {
 		nextInstruction: for i, inst := range block.Instructions {
 			if !inst.Op.IsPush() {
@@ -133,17 +139,25 @@ func CreateLabels(prog *Program) {
 				}
 			}
 
-			// Fetch or create a jump label
+			// Fetch the label and add a reference
 			var label *JumpLabel
 			targetBlock.Annotations.Get(&label)
-			if label == nil {
-				label = &JumpLabel{counter}
-				targetBlock.Annotations.Set(&label)
-				counter += 1
-			}
-
+			label.refCount += 1
 			expression := Expression(label)
 			inst.Annotations.Set(&expression)
+		}
+	}
+
+	// Assign label numbers and delete unused labels
+	count := 0
+	for _, block := range prog.Blocks {
+		var label *JumpLabel
+		block.Annotations.Get(&label)
+		if label.refCount == 0 {
+			block.Annotations.Pop(&label)
+		} else {
+			label.id = count
+			count += 1
 		}
 	}
 }
@@ -233,11 +247,10 @@ func BuildExpressions(prog *Program) {
 				var reaches ReachesDefinition
 				inst.Annotations.Get(&reaches)
 				if len(reaches) == 1 && reaches[0].OriginBlock == block {
-					ptr := InstructionPointer{block, i}
-					log.Printf("Lifting %v; only consumed at %v", ptr.String(), reaches[0].String())
 					// 'Lift' this definition out of the stack, since we know it'll be consumed
 					// later in this block (and only there)
-					lifted[InstructionPointer{block, i}] = true
+					ptr := InstructionPointer{block, i}
+					lifted[ptr] = true
 				}
 			}
 		}

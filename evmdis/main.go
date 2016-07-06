@@ -43,14 +43,13 @@ func main() {
     		var reaches evmdis.ReachesDefinition
     		instruction.Annotations.Get(&reaches)
 
-    		//fmt.Printf("0x%X\t%v\t%v\t%v\n", offset, instruction.String(), reaching, reaches)
     		var expression evmdis.Expression
     		instruction.Annotations.Get(&expression)
 
     		if expression != nil {
     			//fmt.Printf("0x%X\t%v\t%v\t%v\n", offset, expression, reaching, reaches)
     			if instruction.Op.StackWrites() == 1 && !instruction.Op.IsDup() {
-    				fmt.Printf("0x%X\tPUSH(%v)\n", offset, expression)
+    				fmt.Printf("0x%X\tPUSH(%v)\t%v\n", offset, expression, reaches)
     			} else {
 	    			fmt.Printf("0x%X\t%v\n", offset, expression)
 	    		}

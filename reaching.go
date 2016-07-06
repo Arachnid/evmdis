@@ -2,7 +2,6 @@ package evmdis
 
 import (
 	"fmt"
-	"log"
 )
 
 type InstructionPointer struct {
@@ -77,13 +76,11 @@ func updateReachings(inst *Instruction, operands []InstructionPointer) {
 }
 
 func (self *reachingState) Advance() ([]EvmState, error) {
-	log.Printf("Starting basic block at 0x%X, stack=%v...", self.nextBlock.Offset, self.stack)
 	pc := self.nextBlock.Offset
 	stack := self.stack
 	for i := range self.nextBlock.Instructions {
 		inst := &self.nextBlock.Instructions[i]
 		op := inst.Op
-		log.Printf("  0x%X: %v", pc, inst)
 		opFrames, newStack := stack.Popn(op.StackReads())
 		operands := make([]InstructionPointer, len(opFrames))
 		for i, frame := range opFrames {
