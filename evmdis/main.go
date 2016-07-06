@@ -49,7 +49,7 @@ func main() {
     		if expression != nil {
     			//fmt.Printf("0x%X\t%v\t%v\t%v\n", offset, expression, reaching, reaches)
     			if instruction.Op.StackWrites() == 1 && !instruction.Op.IsDup() {
-    				fmt.Printf("0x%X\tPUSH(%v)\t%v\n", offset, expression, reaches)
+    				fmt.Printf("0x%X\tPUSH(%v)\n", offset, expression)
     			} else {
 	    			fmt.Printf("0x%X\t%v\n", offset, expression)
 	    		}
