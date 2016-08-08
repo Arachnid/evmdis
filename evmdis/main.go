@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/arachnid/evmdis"
+	"github.com/Arachnid/evmdis"
 )
 
 func main() {
