@@ -10,42 +10,42 @@ type Expression interface {
 	String() string
 }
 
-var opcodeFormatStrings = map[OpCode]string {
-	ADD: "%v + %v",
-	MUL: "%v * %v",
-	SUB: "%v - %v",
-	DIV: "%v / %v",
-	MOD: "%v %% %v",
-	EXP: "%v ** %v",
-	NOT: "!%v",
-	LT: "%v < %v",
-	GT: "%v > %v",
-	EQ: "%v == %v",
+var opcodeFormatStrings = map[OpCode]string{
+	ADD:    "%v + %v",
+	MUL:    "%v * %v",
+	SUB:    "%v - %v",
+	DIV:    "%v / %v",
+	MOD:    "%v %% %v",
+	EXP:    "%v ** %v",
+	NOT:    "!%v",
+	LT:     "%v < %v",
+	GT:     "%v > %v",
+	EQ:     "%v == %v",
 	ISZERO: "%v == 0",
-	AND: "%v & %v",
-	OR: "%v | %v",
-	XOR: "%v ^ %v",
+	AND:    "%v & %v",
+	OR:     "%v | %v",
+	XOR:    "%v ^ %v",
 }
 
-var operatorPrecedences = map[OpCode]int {
-	NOT: 0,
-	EXP: 1,
-	MUL: 2,
-	DIV: 2,
-	MOD: 2,
-	ADD: 3,
-	SUB: 3,
-	AND: 4,
-	XOR: 5,
-	OR: 6,
-	LT: 7,
-	GT: 7,
-	EQ: 7,
+var operatorPrecedences = map[OpCode]int{
+	NOT:    0,
+	EXP:    1,
+	MUL:    2,
+	DIV:    2,
+	MOD:    2,
+	ADD:    3,
+	SUB:    3,
+	AND:    4,
+	XOR:    5,
+	OR:     6,
+	LT:     7,
+	GT:     7,
+	EQ:     7,
 	ISZERO: 7,
 }
 
 type InstructionExpression struct {
-	Inst Instruction
+	Inst      Instruction
 	Arguments []Expression
 }
 
@@ -71,7 +71,7 @@ func (self *InstructionExpression) String() string {
 	}
 }
 
-type PopExpression struct {}
+type PopExpression struct{}
 
 func (self *PopExpression) String() string {
 	return "POP()"
@@ -94,7 +94,7 @@ func (self *DupExpression) String() string {
 }
 
 type JumpLabel struct {
-	id int
+	id       int
 	refCount int
 }
 
@@ -111,7 +111,8 @@ func CreateLabels(prog *Program) {
 
 	// Find all labels and create references
 	for _, block := range prog.Blocks {
-		nextInstruction: for i, inst := range block.Instructions {
+	nextInstruction:
+		for i, inst := range block.Instructions {
 			if !inst.Op.IsPush() {
 				continue
 			}
@@ -174,7 +175,7 @@ func BuildExpressions(prog *Program) {
 			}
 
 			if inst.Op.IsSwap() {
-				swapFrom, swapTo := reaching[0], reaching[len(reaching) - 1]
+				swapFrom, swapTo := reaching[0], reaching[len(reaching)-1]
 				leftLifted := len(swapFrom) == 1 && lifted[*swapFrom.First()]
 				rightLifted := len(swapTo) == 1 && lifted[*swapTo.First()]
 				if len(reaching) > 2 || (!leftLifted && !rightLifted) {
@@ -188,7 +189,7 @@ func BuildExpressions(prog *Program) {
 					if !leftLifted || !rightLifted {
 						// Count number of non-lifted elements between the operands
 						count := 0
-						for i := 1; i < len(reaching) - 1; i++ {
+						for i := 1; i < len(reaching)-1; i++ {
 							if len(reaching[i]) != 1 || !lifted[*reaching[i].First()] {
 								count += 1
 							}
@@ -198,14 +199,14 @@ func BuildExpressions(prog *Program) {
 					}
 				}
 			} else if inst.Op.IsDup() {
-				dupOf := reaching[len(reaching) - 1]
+				dupOf := reaching[len(reaching)-1]
 				if len(dupOf) == 1 && lifted[*dupOf.First()] {
 					delete(lifted, *dupOf.First())
 				}
 
 				// Count number of non-lifted elements between the operands
 				count := 0
-				for i := 0; i < len(reaching) - 1; i++ {
+				for i := 0; i < len(reaching)-1; i++ {
 					if len(reaching[i]) != 1 || !lifted[*reaching[i].First()] {
 						count += 1
 					}

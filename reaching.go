@@ -2,12 +2,12 @@ package evmdis
 
 import (
 	"fmt"
-	"log"
 	"github.com/arachnid/evmdis/stack"
+	"log"
 )
 
 type InstructionPointer struct {
-	OriginBlock	*BasicBlock
+	OriginBlock *BasicBlock
 	OriginIndex int
 }
 
@@ -47,16 +47,16 @@ func (self InstructionPointerSet) First() *InstructionPointer {
 type ReachingDefinition []InstructionPointerSet
 
 type reachingState struct {
-	program 	*Program
-	nextBlock	*BasicBlock
-	stack		stack.StackFrame
+	program   *Program
+	nextBlock *BasicBlock
+	stack     stack.StackFrame
 }
 
 func PerformReachingAnalysis(prog *Program) error {
 	initial := reachingState{
-		program: prog,
+		program:   prog,
 		nextBlock: prog.Blocks[0],
-		stack: stack.StackEnd{},
+		stack:     stack.StackEnd{},
 	}
 	return ExecuteAbstractly(initial)
 }
@@ -93,18 +93,20 @@ func (self reachingState) Advance() ([]EvmState, error) {
 
 		switch true {
 		// Ops that terminate execution
-		case op == STOP: fallthrough
-		case op == RETURN: fallthrough
+		case op == STOP:
+			fallthrough
+		case op == RETURN:
+			fallthrough
 		case op == SELFDESTRUCT:
 			return nil, nil
 		case op.IsPush():
 			newStack = stack.NewFrame(newStack, InstructionPointer{self.nextBlock, i})
 		case op.IsDup():
-	        // Uses stack instead of newStack, because we don't actually want to pop all those elements
-			newStack = stack.NewFrame(st, stack.UpBy(st, op.StackReads() - 1).Value())
+			// Uses stack instead of newStack, because we don't actually want to pop all those elements
+			newStack = stack.NewFrame(st, stack.UpBy(st, op.StackReads()-1).Value())
 		case op.IsSwap():
-	        // Uses stack instead of newStack, because we don't actually want to pop all those elements
-			newStack = stack.Swap(st, op.StackReads() - 1)
+			// Uses stack instead of newStack, because we don't actually want to pop all those elements
+			newStack = stack.Swap(st, op.StackReads()-1)
 		case op == JUMP:
 			if !operands[0].Get().Op.IsPush() {
 				return nil, fmt.Errorf("%v: Could not determine jump location statically; source is %v", pc, operands[0].GetAddress())
@@ -112,9 +114,9 @@ func (self reachingState) Advance() ([]EvmState, error) {
 			if dest, ok := self.program.JumpDestinations[int(operands[0].Get().Arg.Int64())]; ok {
 				return []EvmState{
 					reachingState{
-						program: self.program,
+						program:   self.program,
 						nextBlock: dest,
-						stack: newStack,
+						stack:     newStack,
 					},
 				}, nil
 			}
@@ -126,16 +128,16 @@ func (self reachingState) Advance() ([]EvmState, error) {
 			var ret []EvmState
 			if dest, ok := self.program.JumpDestinations[int(operands[0].Get().Arg.Int64())]; ok {
 				ret = append(ret, reachingState{
-					program: self.program,
+					program:   self.program,
 					nextBlock: dest,
-					stack: newStack,
+					stack:     newStack,
 				})
 			}
 			if self.nextBlock.Next != nil {
 				ret = append(ret, reachingState{
-					program: self.program,
+					program:   self.program,
 					nextBlock: self.nextBlock.Next,
-					stack: newStack,
+					stack:     newStack,
 				})
 			}
 			return ret, nil
@@ -159,9 +161,9 @@ func (self reachingState) Advance() ([]EvmState, error) {
 	if self.nextBlock.Next != nil {
 		return []EvmState{
 			reachingState{
-				program: self.program,
+				program:   self.program,
 				nextBlock: self.nextBlock.Next,
-				stack: st,
+				stack:     st,
 			},
 		}, nil
 	} else {
