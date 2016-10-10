@@ -515,7 +515,7 @@ var opCodeToStackReads = map[OpCode]int{
 	CALL:         7,
 	RETURN:       2,
 	CALLCODE:     7,
-	DELEGATECALL: 7,
+	DELEGATECALL: 6,
 	SELFDESTRUCT: 1,
 }
 

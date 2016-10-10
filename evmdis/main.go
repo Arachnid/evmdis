@@ -47,7 +47,6 @@ func main() {
 			instruction.Annotations.Get(&expression)
 
 			if expression != nil {
-				//fmt.Printf("0x%X\t%v\t%v\t%v\n", offset, expression, reaching, reaches)
 				if instruction.Op.StackWrites() == 1 && !instruction.Op.IsDup() {
 					fmt.Printf("0x%X\tPUSH(%v)\n", offset, expression)
 				} else {
