@@ -84,17 +84,25 @@ func updateBlockReachings(block *BasicBlock, stack stack.StackFrame) {
 	var reachings ReachingDefinition
 	block.Annotations.Get(&reachings)
 	if reachings == nil {
-		reachings = make([]InstructionPointerSet, 0, stack.Height() + 1)
+		reachings = make([]InstructionPointerSet, stack.Height())
+		for i := 0; i < len(reachings); i++ {
+			reachings[i] = make(map[InstructionPointer]bool)
+		}
 	}
 
 	frame := stack
-	for i := 0; i <= stack.Height(); i++ {
+	for i := 0; i < stack.Height(); i++ {
 		if len(reachings) <= i {
-			reachings = append(reachings, make(map[InstructionPointer]bool))
+			break
 		}
 		reachings[i][frame.Value().(InstructionPointer)] = true
 		frame = frame.Up()
 	}
+
+	if stack.Height() < len(reachings) {
+		reachings = reachings[:stack.Height()]
+	}
+
 	block.Annotations.Set(&reachings)
 }
 

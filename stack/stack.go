@@ -23,7 +23,7 @@ func (f stackFrame) Value() interface{} { return f.value }
 type StackEnd struct{}
 
 func (s StackEnd) Up() StackFrame     { panic("Attempted to call Up() on StackEnd") }
-func (s StackEnd) Height() int        { return -1 }
+func (s StackEnd) Height() int        { return 0 }
 func (s StackEnd) Value() interface{} { panic("Attempted to call Value() on StackEnd") }
 
 func NewFrame(up StackFrame, value interface{}) StackFrame {
@@ -52,8 +52,8 @@ func Swap(stack StackFrame, num int) StackFrame {
 }
 
 func String(stack StackFrame) string {
-	values := make([]interface{}, 0, stack.Height()+1)
-	for frame := stack; frame.Height() >= 0; frame = frame.Up() {
+	values := make([]interface{}, 0, stack.Height() + 1)
+	for frame := stack; frame.Height() > 0; frame = frame.Up() {
 		values = append(values, frame.Value())
 	}
 	return fmt.Sprintf("%v", values)
