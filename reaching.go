@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/arachnid/evmdis/stack"
 	"log"
+	"strings"
 )
 
 type InstructionPointer struct {
@@ -24,7 +25,21 @@ func (self InstructionPointer) GetAddress() int {
 }
 
 func (self InstructionPointer) String() string {
-	return fmt.Sprintf("%v@0x%X", self.Get(), self.GetAddress())
+	inst := self.Get()
+
+	var expression Expression
+	inst.Annotations.Get(&expression)
+	switch expression := expression.(type) {
+	case *InstructionExpression:
+		if(expression.Inst.Op.IsPush()) {
+			return fmt.Sprintf("0x%X", expression.Inst.Arg)
+		}
+		break;
+	case *JumpLabel:
+		return fmt.Sprintf("%v", expression)
+	}
+
+	return fmt.Sprintf("@0x%X", self.GetAddress())
 }
 
 type InstructionPointerSet map[InstructionPointer]bool
@@ -34,7 +49,11 @@ func (self InstructionPointerSet) String() string {
 	for k := range self {
 		pointers = append(pointers, k.String())
 	}
-	return fmt.Sprintf("%v", pointers)
+	if len(pointers) == 1 {
+		return pointers[0]
+	} else {
+		return fmt.Sprintf("[%v]", strings.Join(pointers, " | "))
+	}
 }
 
 func (self InstructionPointerSet) First() *InstructionPointer {
@@ -61,6 +80,24 @@ func PerformReachingAnalysis(prog *Program) error {
 	return ExecuteAbstractly(initial)
 }
 
+func updateBlockReachings(block *BasicBlock, stack stack.StackFrame) {
+	var reachings ReachingDefinition
+	block.Annotations.Get(&reachings)
+	if reachings == nil {
+		reachings = make([]InstructionPointerSet, 0, stack.Height() + 1)
+	}
+
+	frame := stack
+	for i := 0; i <= stack.Height(); i++ {
+		if len(reachings) <= i {
+			reachings = append(reachings, make(map[InstructionPointer]bool))
+		}
+		reachings[i][frame.Value().(InstructionPointer)] = true
+		frame = frame.Up()
+	}
+	block.Annotations.Set(&reachings)
+}
+
 func updateReachings(inst *Instruction, operands []InstructionPointer) {
 	var reachings ReachingDefinition
 	inst.Annotations.Get(&reachings)
@@ -79,6 +116,7 @@ func updateReachings(inst *Instruction, operands []InstructionPointer) {
 
 func (self reachingState) Advance() ([]EvmState, error) {
 	log.Printf("Entering block at %d with stack height %v", self.nextBlock.Offset, self.stack.Height())
+	updateBlockReachings(self.nextBlock, self.stack)
 	pc := self.nextBlock.Offset
 	st := self.stack
 	for i := range self.nextBlock.Instructions {

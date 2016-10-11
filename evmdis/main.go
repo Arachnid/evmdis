@@ -30,14 +30,19 @@ func main() {
 	for _, block := range program.Blocks {
 		offset := block.Offset
 
+		// Print out the jump label for the block, if there is one
 		var label *evmdis.JumpLabel
 		block.Annotations.Get(&label)
 		if label != nil {
 			fmt.Printf("%v\n", label)
 		}
 
+		// Print out the stack prestate for this block
+		var reaching evmdis.ReachingDefinition
+		block.Annotations.Get(&reaching)
+		fmt.Printf("# Stack: %v\n", reaching)
+
 		for _, instruction := range block.Instructions {
-			var reaching evmdis.ReachingDefinition
 			instruction.Annotations.Get(&reaching)
 
 			var reaches evmdis.ReachesDefinition

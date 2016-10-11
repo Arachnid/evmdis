@@ -17,11 +17,11 @@ var opcodeFormatStrings = map[OpCode]string{
 	DIV:    "%v / %v",
 	MOD:    "%v %% %v",
 	EXP:    "%v ** %v",
-	NOT:    "!%v",
+	NOT:    "~%v",
 	LT:     "%v < %v",
 	GT:     "%v > %v",
 	EQ:     "%v == %v",
-	ISZERO: "%v == 0",
+	ISZERO: "!%v",
 	AND:    "%v & %v",
 	OR:     "%v | %v",
 	XOR:    "%v ^ %v",
@@ -29,6 +29,7 @@ var opcodeFormatStrings = map[OpCode]string{
 
 var operatorPrecedences = map[OpCode]int{
 	NOT:    0,
+	ISZERO: 0,
 	EXP:    1,
 	MUL:    2,
 	DIV:    2,
@@ -41,7 +42,6 @@ var operatorPrecedences = map[OpCode]int{
 	LT:     7,
 	GT:     7,
 	EQ:     7,
-	ISZERO: 7,
 }
 
 type InstructionExpression struct {
@@ -51,6 +51,7 @@ type InstructionExpression struct {
 
 func (self *InstructionExpression) String() string {
 	if self.Inst.Op.IsPush() {
+		// Print push instructions as just their value
 		return fmt.Sprintf("0x%X", self.Inst.Arg)
 	} else if format, ok := opcodeFormatStrings[self.Inst.Op]; ok {
 		args := make([]interface{}, 0, len(self.Arguments))
@@ -63,6 +64,7 @@ func (self *InstructionExpression) String() string {
 		}
 		return fmt.Sprintf(format, args...)
 	} else {
+		// Format the opcode as a function call
 		args := make([]string, 0, len(self.Arguments))
 		for _, arg := range self.Arguments {
 			args = append(args, arg.String())
@@ -109,7 +111,7 @@ func CreateLabels(prog *Program) {
 		block.Annotations.Set(&label)
 	}
 
-	// Find all labels and create references
+	// Find all uses of labels and create references
 	for _, block := range prog.Blocks {
 	nextInstruction:
 		for i, inst := range block.Instructions {
@@ -140,7 +142,7 @@ func CreateLabels(prog *Program) {
 				}
 			}
 
-			// Fetch the label and add a reference
+			// Fetch the label and add a reference as an expression
 			var label *JumpLabel
 			targetBlock.Annotations.Get(&label)
 			label.refCount += 1
@@ -165,6 +167,8 @@ func CreateLabels(prog *Program) {
 
 func BuildExpressions(prog *Program) {
 	for _, block := range prog.Blocks {
+		// Lifted is a set of subexpressions that can be incorporated into larger expressions;
+		// they have been 'lifted' out of the stack.
 		lifted := make(InstructionPointerSet)
 		for i, inst := range block.Instructions {
 			// Find all the definitions that reach each argument of this op
@@ -175,12 +179,13 @@ func BuildExpressions(prog *Program) {
 			}
 
 			if inst.Op.IsSwap() {
+				// Try and reduce the size of swap operations to account for lifted arguments
 				swapFrom, swapTo := reaching[0], reaching[len(reaching)-1]
 				leftLifted := len(swapFrom) == 1 && lifted[*swapFrom.First()]
 				rightLifted := len(swapTo) == 1 && lifted[*swapTo.First()]
 				if len(reaching) > 2 || (!leftLifted && !rightLifted) {
+					// One side only is lifted; resolve by making arg explicit again
 					if leftLifted && !rightLifted {
-						// One side only is lifted; resolve by making arg explicit again
 						delete(lifted, *swapFrom.First())
 					} else if !leftLifted && rightLifted {
 						delete(lifted, *swapTo.First())
@@ -199,8 +204,11 @@ func BuildExpressions(prog *Program) {
 					}
 				}
 			} else if inst.Op.IsDup() {
+				// Try and reduce the size of dup operations to account for lifted arguments
+
 				dupOf := reaching[len(reaching)-1]
 				if len(dupOf) == 1 && lifted[*dupOf.First()] {
+					// 'unlift' any operations that are consumed by DUPs
 					delete(lifted, *dupOf.First())
 				}
 
@@ -215,6 +223,7 @@ func BuildExpressions(prog *Program) {
 				var expression Expression = &DupExpression{count + 1}
 				inst.Annotations.Set(&expression)
 			} else if inst.Op == POP && (len(reaching[0]) > 1 || !lifted[*reaching[0].First()]) {
+				// Represent POPs explicitly if the argument is consumed in more than one place
 				var expression Expression = &PopExpression{}
 				inst.Annotations.Set(&expression)
 			} else {
