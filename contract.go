@@ -34,6 +34,17 @@ type BasicBlock struct {
 	Annotations  *TypeMap
 }
 
+func (bb *BasicBlock) OffsetOf(inst *Instruction) int {
+    offset := bb.Offset
+    for i := 0; i < len(bb.Instructions); i++ {
+        if inst == &bb.Instructions[i] {
+            return offset
+        }
+        offset += bb.Instructions[i].Op.OperandSize() + 1
+    }
+    return -1
+}
+
 type Program struct {
 	Blocks           []*BasicBlock
 	JumpDestinations map[int]*BasicBlock

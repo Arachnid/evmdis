@@ -44,7 +44,7 @@ var operatorPrecedences = map[OpCode]int{
 }
 
 type InstructionExpression struct {
-	Inst      Instruction
+	Inst      *Instruction
 	Arguments []Expression
 }
 
@@ -169,12 +169,14 @@ func BuildExpressions(prog *Program) error {
 		// Lifted is a set of subexpressions that can be incorporated into larger expressions;
 		// they have been 'lifted' out of the stack.
 		lifted := make(InstructionPointerSet)
-		for i, inst := range block.Instructions {
+		for i := 0; i < len(block.Instructions); i++ {
+			inst := &block.Instructions[i];
+
 			// Find all the definitions that reach each argument of this op
 			var reaching ReachingDefinition
 			inst.Annotations.Get(&reaching)
 			if len(reaching) != inst.Op.StackReads() {
-				return fmt.Errorf("Expected number of stack reads (%v) to equal reaching definition length (%v)", inst.Op.StackReads(), len(reaching))
+				return fmt.Errorf("Processing %v@0x%X: expected number of stack reads (%v) to equal reaching definition length (%v)", inst, block.OffsetOf(inst), inst.Op.StackReads(), len(reaching))
 			}
 
 			if inst.Op.IsSwap() {
