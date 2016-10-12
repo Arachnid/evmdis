@@ -2,7 +2,6 @@ package evmdis
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -165,7 +164,7 @@ func CreateLabels(prog *Program) {
 	}
 }
 
-func BuildExpressions(prog *Program) {
+func BuildExpressions(prog *Program) error {
 	for _, block := range prog.Blocks {
 		// Lifted is a set of subexpressions that can be incorporated into larger expressions;
 		// they have been 'lifted' out of the stack.
@@ -175,7 +174,7 @@ func BuildExpressions(prog *Program) {
 			var reaching ReachingDefinition
 			inst.Annotations.Get(&reaching)
 			if len(reaching) != inst.Op.StackReads() {
-				log.Fatalf("Expected number of stack reads (%v) to equal reaching definition length (%v)", inst.Op.StackReads(), len(reaching))
+				return fmt.Errorf("Expected number of stack reads (%v) to equal reaching definition length (%v)", inst.Op.StackReads(), len(reaching))
 			}
 
 			if inst.Op.IsSwap() {
@@ -265,7 +264,9 @@ func BuildExpressions(prog *Program) {
 			}
 		}
 		if len(lifted) != 0 {
-			log.Fatalf("Expected all lifted arguments to be consumed by end of block: %v", lifted)
+			return fmt.Errorf("Expected all lifted arguments to be consumed by end of block: %v", lifted)
 		}
 	}
+
+	return nil
 }

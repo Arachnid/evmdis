@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/Arachnid/evmdis"
@@ -13,7 +12,7 @@ import (
 func main() {
 	hexdata, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
-		log.Fatalf("Could not read from stdin: %v", err)
+		panic(fmt.Sprintf("Could not read from stdin: %v", err))
 	}
 
 	bytecode := make([]byte, hex.DecodedLen(len(hexdata)))
@@ -21,11 +20,13 @@ func main() {
 
 	program := evmdis.NewProgram(bytecode)
 	if err := evmdis.PerformReachingAnalysis(program); err != nil {
-		log.Fatalf("Error performing reaching analysis: %v", err)
+		panic(fmt.Sprintf("Error performing reaching analysis: %v", err))
 	}
 	evmdis.PerformReachesAnalysis(program)
 	evmdis.CreateLabels(program)
-	evmdis.BuildExpressions(program)
+	if err := evmdis.BuildExpressions(program); err != nil {
+		panic(fmt.Sprintf("Error building expressions: %v", err))
+	}
 
 	for _, block := range program.Blocks {
 		offset := block.Offset
