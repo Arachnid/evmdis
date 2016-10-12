@@ -95,7 +95,7 @@ func NewProgram(bytecode []byte) *Program {
 			}
 			currentBlock.Instructions = append(currentBlock.Instructions, instruction)
 
-			if op.IsJump() {
+			if op.IsJump() || op == RETURN || op == SELFDESTRUCT || op == STOP {
 				program.Blocks = append(program.Blocks, currentBlock)
 				newBlock := &BasicBlock{
 					Offset:      i + size + 1,

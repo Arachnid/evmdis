@@ -166,6 +166,14 @@ func CreateLabels(prog *Program) {
 
 func BuildExpressions(prog *Program) error {
 	for _, block := range prog.Blocks {
+		var reaching ReachingDefinition
+		block.Annotations.Get(&reaching)
+
+		// If reaching is nil, this block is unreachable; skip processing it
+		if reaching == nil {
+			continue
+		}
+
 		// Lifted is a set of subexpressions that can be incorporated into larger expressions;
 		// they have been 'lifted' out of the stack.
 		lifted := make(InstructionPointerSet)
