@@ -2,7 +2,7 @@ package evmdis
 
 import (
 	"fmt"
-	"github.com/arachnid/evmdis/stack"
+	"github.com/Arachnid/evmdis/stack"
 	"log"
 	"strings"
 )
