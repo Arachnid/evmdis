@@ -11,6 +11,7 @@ type TypeMap struct {
 func (self *TypeMap) Get(obj interface{}) {
 	element := reflect.ValueOf(obj).Elem()
 	if value, ok := self.data[element.Type()]; ok {
+		//log.Printf("get on type: %s", element.Type())
 		element.Set(reflect.ValueOf(value))
 	} else {
 		element.Set(reflect.Zero(element.Type()))
@@ -29,6 +30,7 @@ func (self *TypeMap) Pop(obj interface{}) {
 
 func (self *TypeMap) Set(obj interface{}) {
 	element := reflect.ValueOf(obj).Elem()
+	//log.Printf("set on type: %s", element.Type())
 	self.data[element.Type()] = element.Interface()
 }
 
