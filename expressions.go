@@ -7,6 +7,7 @@ import (
 
 type Expression interface {
 	String() string
+	GetArgString(uint) string
 }
 
 var opcodeFormatStrings = map[OpCode]string{
@@ -48,6 +49,10 @@ type InstructionExpression struct {
 	Arguments []Expression
 }
 
+func (self *InstructionExpression) GetArgString(nr uint) string {
+	return self.Arguments[nr].String()
+}
+
 func (self *InstructionExpression) String() string {
 	if self.Inst.Op.IsPush() {
 		// Print push instructions as just their value
@@ -78,8 +83,16 @@ func (self *PopExpression) String() string {
 	return "POP()"
 }
 
+func (self *PopExpression) GetArgString(nr uint) string {
+	return ""
+}
+
 type SwapExpression struct {
 	count int
+}
+
+func (self *SwapExpression) GetArgString(nr uint) string {
+	return ""
 }
 
 func (self *SwapExpression) String() string {
@@ -88,6 +101,10 @@ func (self *SwapExpression) String() string {
 
 type DupExpression struct {
 	count int
+}
+
+func (self *DupExpression) GetArgString(nr uint) string {
+	return ""
 }
 
 func (self *DupExpression) String() string {
@@ -101,6 +118,10 @@ type JumpLabel struct {
 
 func (self *JumpLabel) String() string {
 	return fmt.Sprintf(":label%d", self.id)
+}
+
+func (self *JumpLabel) GetArgString(nr uint) string {
+	return ""
 }
 
 func CreateLabels(prog *Program) {

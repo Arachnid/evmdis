@@ -8,7 +8,7 @@ import (
 	"log"
 	"strconv"
 	"flag"
-	"github.com/Arachnid/evmdis"
+	"github.com/soad003/evmdis"
 )
 
 func main() {
@@ -16,6 +16,7 @@ func main() {
 	withSwarmHash := flag.Bool("swarm", true, "a bool")
 	ctorMode := flag.Bool("ctor", false, "a bool")
 	logging := flag.Bool("log", false, "a bool")
+	//callsMode := flag.Bool("calls", false, "a bool")
 
 	flag.Parse()
 
@@ -110,12 +111,12 @@ func PrintAnalysisResult(program *evmdis.Program) {
 		fmt.Printf("# Stack: %v\n", reaching)
 
 		for _, instruction := range block.Instructions {
-			// instruction.Annotations.Get(&reaching)
+		
+			var reaching evmdis.ReachingDefinition
+			instruction.Annotations.Get(&reaching)
+			log.Printf("# Stack: %v\n", reaching)
 
-			log.Println(fmt.Sprintf("op: %s\n", instruction.Op))
-
-			var reaches evmdis.ReachesDefinition
-			instruction.Annotations.Get(&reaches)
+			log.Println(fmt.Sprintf("0x%X\t%s", offset, instruction.Op))		
 
 			var expression evmdis.Expression
 			instruction.Annotations.Get(&expression)
