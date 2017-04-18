@@ -202,8 +202,8 @@ const (
 	RETURN
 	DELEGATECALL
 
-	INVALID = 0xfe
-	REVERT = 0xfd
+	INVALID      = 0xfe
+	REVERT       = 0xfd
 	SELFDESTRUCT = 0xff
 )
 
@@ -357,8 +357,8 @@ var opCodeToString = map[OpCode]string{
 	RETURN:       "RETURN",
 	CALLCODE:     "CALLCODE",
 	DELEGATECALL: "DELEGATECALL",
-	INVALID: "INVALID",
-	REVERT: "REVERT",
+	INVALID:      "INVALID",
+	REVERT:       "REVERT",
 	SELFDESTRUCT: "SELFDESTRUCT",
 }
 
@@ -520,8 +520,8 @@ var opCodeToStackReads = map[OpCode]int{
 	RETURN:       2,
 	CALLCODE:     7,
 	DELEGATECALL: 6,
-	INVALID: 0,
-	REVERT: 0,
+	INVALID:      0,
+	REVERT:       0,
 	SELFDESTRUCT: 1,
 }
 
@@ -678,8 +678,8 @@ var opCodeToStackWrites = map[OpCode]int{
 	RETURN:       0,
 	CALLCODE:     1,
 	DELEGATECALL: 1,
-	INVALID: 0,
-	REVERT: 0,
+	INVALID:      0,
+	REVERT:       0,
 	SELFDESTRUCT: 0,
 }
 
@@ -817,8 +817,8 @@ var stringToOp = map[string]OpCode{
 	"CALL":         CALL,
 	"RETURN":       RETURN,
 	"CALLCODE":     CALLCODE,
-	"INVALID":			INVALID,
-	"REVERT":				REVERT,
+	"INVALID":      INVALID,
+	"REVERT":       REVERT,
 	"SELFDESTRUCT": SELFDESTRUCT,
 }
 
