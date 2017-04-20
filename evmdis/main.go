@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 )
 
 const swarmHashLength = 43
@@ -84,8 +83,10 @@ func FindNextCodeEntryPoint(program *evmdis.Program) uint64 {
 
 				instruction.Annotations.Get(&expression)
 
-				if i, err := strconv.ParseUint(expression.(*evmdis.InstructionExpression).Arguments[1].String()[2:], 16, 32); err == nil {
-					lastPos = i
+				arg := expression.(*evmdis.InstructionExpression).Arguments[1].Eval()
+
+				if arg != nil {
+					lastPos = arg.Uint64()
 				}
 			}
 		}
@@ -110,10 +111,6 @@ func PrintAnalysisResult(program *evmdis.Program) {
 		fmt.Printf("# Stack: %v\n", reaching)
 
 		for _, instruction := range block.Instructions {
-
-			var reaching evmdis.ReachingDefinition
-			instruction.Annotations.Get(&reaching)
-
 			var expression evmdis.Expression
 			instruction.Annotations.Get(&expression)
 

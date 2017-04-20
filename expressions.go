@@ -2,11 +2,13 @@ package evmdis
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 )
 
 type Expression interface {
 	String() string
+	Eval() *big.Int
 }
 
 var opcodeFormatStrings = map[OpCode]string{
@@ -48,6 +50,10 @@ type InstructionExpression struct {
 	Arguments []Expression
 }
 
+func (self *InstructionExpression) Eval() *big.Int {
+	return self.Inst.Arg
+}
+
 func (self *InstructionExpression) String() string {
 	if self.Inst.Op.IsPush() {
 		// Print push instructions as just their value
@@ -78,17 +84,28 @@ func (self *PopExpression) String() string {
 	return "POP()"
 }
 
+func (self *PopExpression) Eval() *big.Int {
+	return nil
+}
+
 type SwapExpression struct {
 	count int
 }
-
 
 func (self *SwapExpression) String() string {
 	return fmt.Sprintf("SWAP%d", self.count)
 }
 
+func (self *SwapExpression) Eval() *big.Int {
+	return nil
+}
+
 type DupExpression struct {
 	count int
+}
+
+func (self *DupExpression) Eval() *big.Int {
+	return nil
 }
 
 func (self *DupExpression) String() string {
@@ -98,6 +115,10 @@ func (self *DupExpression) String() string {
 type JumpLabel struct {
 	id       int
 	refCount int
+}
+
+func (self *JumpLabel) Eval() *big.Int {
+	return nil
 }
 
 func (self *JumpLabel) String() string {
@@ -179,7 +200,7 @@ func BuildExpressions(prog *Program) error {
 		// they have been 'lifted' out of the stack.
 		lifted := make(InstructionPointerSet)
 		for i := 0; i < len(block.Instructions); i++ {
-			inst := &block.Instructions[i];
+			inst := &block.Instructions[i]
 
 			// Find all the definitions that reach each argument of this op
 			var reaching ReachingDefinition

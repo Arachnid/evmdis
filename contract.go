@@ -64,7 +64,6 @@ func NewProgram(bytecode []byte) *Program {
 
 	for i := 0; i < bytecodeLength; i++ {
 		op := OpCode(bytecode[i])
-		//fmt.Println(fmt.Sprintf("op: %s\n", op))
 		size := op.OperandSize()
 		var arg *big.Int
 		if size > 0 {
