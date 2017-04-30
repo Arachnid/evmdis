@@ -52,6 +52,7 @@ type Program struct {
 }
 
 func NewProgram(bytecode []byte) *Program {
+	bytecodeLength := len(bytecode)
 	program := &Program{
 		JumpDestinations: make(map[int]*BasicBlock),
 	}
@@ -61,7 +62,7 @@ func NewProgram(bytecode []byte) *Program {
 		Annotations: NewTypeMap(),
 	}
 
-	for i := 0; i < len(bytecode); i++ {
+	for i := 0; i < bytecodeLength; i++ {
 		op := OpCode(bytecode[i])
 		size := op.OperandSize()
 		var arg *big.Int
@@ -69,7 +70,7 @@ func NewProgram(bytecode []byte) *Program {
 			arg = big.NewInt(0)
 			for j := 1; j <= size; j++ {
 				arg.Lsh(arg, 8)
-				if i+j < len(bytecode) {
+				if i+j < bytecodeLength {
 					arg.Or(arg, big.NewInt(int64(bytecode[i+j])))
 				}
 			}
@@ -95,7 +96,7 @@ func NewProgram(bytecode []byte) *Program {
 			}
 			currentBlock.Instructions = append(currentBlock.Instructions, instruction)
 
-			if op.IsJump() || op == RETURN || op == SELFDESTRUCT || op == STOP {
+			if op.IsJump() || op == RETURN || op == SELFDESTRUCT || op == STOP || op == INVALID || op == REVERT {
 				program.Blocks = append(program.Blocks, currentBlock)
 				newBlock := &BasicBlock{
 					Offset:      i + size + 1,

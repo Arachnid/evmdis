@@ -143,6 +143,10 @@ func (self reachingState) Advance() ([]EvmState, error) {
 			fallthrough
 		case op == RETURN:
 			fallthrough
+		case op == INVALID:
+			fallthrough
+		case op == REVERT:
+			fallthrough
 		case op == SELFDESTRUCT:
 			return nil, nil
 		case op.IsPush():
