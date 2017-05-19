@@ -3,7 +3,6 @@ package evmdis
 import (
 	"fmt"
 	"github.com/Arachnid/evmdis/stack"
-	"log"
 	"strings"
 )
 
@@ -123,7 +122,7 @@ func updateReachings(inst *Instruction, operands []InstructionPointer) {
 }
 
 func (self reachingState) Advance() ([]EvmState, error) {
-	log.Printf("Entering block at %d with stack height %v", self.nextBlock.Offset, self.stack.Height())
+	// log.Printf("Entering block at %d with stack height %v", self.nextBlock.Offset, self.stack.Height())
 	updateBlockReachings(self.nextBlock, self.stack)
 	pc := self.nextBlock.Offset
 	st := self.stack
