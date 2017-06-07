@@ -4,10 +4,11 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/Arachnid/evmdis"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/Arachnid/evmdis"
 )
 
 const swarmHashLength = 43
@@ -32,46 +33,57 @@ func main() {
 		panic(fmt.Sprintf("Could not read from stdin: %v", err))
 	}
 
-	bytecodeLength := uint64(hex.DecodedLen(len(hexdata)))
-	bytecode := make([]byte, bytecodeLength)
-
+	// disassemble
+	bytecode := make([]byte, hex.DecodedLen(len(hexdata)))
 	hex.Decode(bytecode, hexdata)
 
+	if disassembly, err := Disassemble(bytecode, *withSwarmHash, *ctorMode); err != nil {
+		panic(fmt.Sprintf("Unable to disassemble: %v", err))
+	} else {
+		fmt.Println(disassembly)
+	}
+}
+
+func Disassemble(bytecode []byte, withSwarmHash bool, ctorMode bool) (disassembly string, err error) {
 	// detect swarm hash and remove it from bytecode, see http://solidity.readthedocs.io/en/latest/miscellaneous.html?highlight=swarm#encoding-of-the-metadata-hash-in-the-bytecode
+	bytecodeLength := uint64(len(bytecode))
 	if bytecode[bytecodeLength-1] == swarmHashProgramTrailer[1] &&
 		bytecode[bytecodeLength-2] == swarmHashProgramTrailer[0] &&
 		bytecode[bytecodeLength-43] == swarmHashHeader[0] &&
 		bytecode[bytecodeLength-42] == swarmHashHeader[1] &&
-		*withSwarmHash {
+		withSwarmHash {
+
 		bytecodeLength -= swarmHashLength // remove swarm part
 	}
 
 	program := evmdis.NewProgram(bytecode[:bytecodeLength])
 	AnalyzeProgram(program)
 
-	if *ctorMode {
+	if ctorMode {
 		var codeEntryPoint = FindNextCodeEntryPoint(program)
 
 		if codeEntryPoint == 0 {
-			panic("no code entrypoint found in ctor")
+			return disassembly, fmt.Errorf("no code entrypoint found in ctor")
 		} else if codeEntryPoint >= bytecodeLength {
-			panic("code entrypoint outside of currently available code")
+			return disassembly, fmt.Errorf("code entrypoint outside of currently available code")
 		}
 
 		ctor := evmdis.NewProgram(bytecode[:codeEntryPoint])
 		code := evmdis.NewProgram(bytecode[codeEntryPoint:bytecodeLength])
 
 		AnalyzeProgram(ctor)
-		fmt.Println("# Constructor part -------------------------")
-		PrintAnalysisResult(ctor)
+		disassembly += fmt.Sprintln("# Constructor part -------------------------")
+		disassembly += PrintAnalysisResult(ctor)
 
 		AnalyzeProgram(code)
-		fmt.Println("# Code part -------------------------")
-		PrintAnalysisResult(code)
+		disassembly += fmt.Sprintln("# Code part -------------------------")
+		disassembly += PrintAnalysisResult(code)
 
 	} else {
-		PrintAnalysisResult(program)
+		disassembly += PrintAnalysisResult(program)
 	}
+
+	return disassembly, nil
 }
 
 func FindNextCodeEntryPoint(program *evmdis.Program) uint64 {
@@ -94,7 +106,7 @@ func FindNextCodeEntryPoint(program *evmdis.Program) uint64 {
 	return lastPos
 }
 
-func PrintAnalysisResult(program *evmdis.Program) {
+func PrintAnalysisResult(program *evmdis.Program) (disassembly string) {
 	for _, block := range program.Blocks {
 		offset := block.Offset
 
@@ -102,13 +114,15 @@ func PrintAnalysisResult(program *evmdis.Program) {
 		var label *evmdis.JumpLabel
 		block.Annotations.Get(&label)
 		if label != nil {
-			fmt.Printf("%v\n", label)
+			disassembly += fmt.Sprintf("%v\n", label)
 		}
 
 		// Print out the stack prestate for this block
 		var reaching evmdis.ReachingDefinition
 		block.Annotations.Get(&reaching)
-		fmt.Printf("# Stack: %v\n", reaching)
+
+		blockDisassembly := fmt.Sprintf("# Stack: %v\n", reaching)
+		blockRealInstructions := 0
 
 		for _, instruction := range block.Instructions {
 			var expression evmdis.Expression
@@ -116,24 +130,36 @@ func PrintAnalysisResult(program *evmdis.Program) {
 
 			if expression != nil {
 				if instruction.Op.StackWrites() == 1 && !instruction.Op.IsDup() {
-					fmt.Printf("0x%X\tPUSH(%v)\n", offset, expression)
+					blockDisassembly += fmt.Sprintf("0x%X\tPUSH(%v)\n", offset, expression)
 				} else {
-					fmt.Printf("0x%X\t%v\n", offset, expression)
+					blockDisassembly += fmt.Sprintf("0x%X\t%v\n", offset, expression)
 				}
+
+				blockRealInstructions++
 			}
 			offset += instruction.Op.OperandSize() + 1
 		}
-		fmt.Printf("\n")
+
+		blockDisassembly += fmt.Sprintf("\n")
+
+		// avoid printing empty stack frames with no instructions in the block
+		if len(reaching) > 0 || blockRealInstructions > 0 {
+			disassembly += blockDisassembly
+		}
 	}
+
+	return disassembly
 }
 
-func AnalyzeProgram(program *evmdis.Program) {
+func AnalyzeProgram(program *evmdis.Program) (err error) {
 	if err := evmdis.PerformReachingAnalysis(program); err != nil {
-		panic(fmt.Sprintf("Error performing reaching analysis: %v", err))
+		return fmt.Errorf("Error performing reaching analysis: %v", err)
 	}
 	evmdis.PerformReachesAnalysis(program)
 	evmdis.CreateLabels(program)
 	if err := evmdis.BuildExpressions(program); err != nil {
-		panic(fmt.Sprintf("Error building expressions: %v", err))
+		return fmt.Errorf("Error building expressions: %v", err)
 	}
+
+	return nil
 }
