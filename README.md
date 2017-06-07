@@ -133,3 +133,16 @@ Relevant PUSH instructions are annotated with an `Expression` that is an instanc
 Expression construction iterates over each basic block, identifying operations that are consumed only at a single location, constructing composite expressions for them. For instance, `PUSH1 3 PUSH1 1 PUSH1 2 ADD MUL` is rewritten to the expression `(1 + 2) * 3`. POP operations are elided when possible, and explicitly included as annotations where not. DUP and SWAP operations are eliminated where possible, and adjusted to show the correct number of stack slots when 'lifting' removes elements from the (virtual) stack.
 
 Each instruction that is not part of a subexpression is annotated with an `Expression` instance.
+
+## Building
+Retrieve the evmdis source. For example:
+
+    go get github.com/Arachnid/evmdis
+
+Build and install evmdis to $GOPATH/bin:
+
+    go install github.com/Arachnid/evmdis/evmdis
+
+Sanity check, assuming $GOPATH/bin is in your $PATH:
+
+    evmdis -h
