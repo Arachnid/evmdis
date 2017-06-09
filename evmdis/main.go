@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	evmdis "github.com/Arachnid/evmdis"
+	"github.com/Arachnid/evmdis/disassemble"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	bytecode := make([]byte, hex.DecodedLen(len(hexdata)))
 	hex.Decode(bytecode, hexdata)
 
-	if disassembly, err := evmdis.Disassemble(bytecode, *withSwarmHash, *ctorMode); err != nil {
+	if disassembly, err := disassemble.Disassemble(bytecode, *withSwarmHash, *ctorMode); err != nil {
 		panic(fmt.Sprintf("Unable to disassemble: %v", err))
 	} else {
 		fmt.Println(disassembly)

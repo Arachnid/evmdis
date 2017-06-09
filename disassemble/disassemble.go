@@ -1,4 +1,4 @@
-package evmdis
+package disassemble
 
 import (
 	"fmt"
