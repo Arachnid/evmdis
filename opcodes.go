@@ -14,6 +14,14 @@ func (op OpCode) IsPush() bool {
 	return false
 }
 
+func (op OpCode) HasSideEffects() bool {
+	switch op {
+	case CALL:
+		return true
+	}
+	return false
+}
+
 func (op OpCode) IsDup() bool {
 	switch op {
 	case DUP1, DUP2, DUP3, DUP4, DUP5, DUP6, DUP7, DUP8, DUP9, DUP10, DUP11, DUP12, DUP13, DUP14, DUP15, DUP16:

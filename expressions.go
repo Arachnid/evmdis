@@ -287,7 +287,7 @@ func BuildExpressions(prog *Program) error {
 
 				var reaches ReachesDefinition
 				inst.Annotations.Get(&reaches)
-				if len(reaches) == 1 && reaches[0].OriginBlock == block {
+				if len(reaches) == 1 && reaches[0].OriginBlock == block && !inst.Op.HasSideEffects() {
 					// 'Lift' this definition out of the stack, since we know it'll be consumed
 					// later in this block (and only there)
 					ptr := InstructionPointer{block, i}
