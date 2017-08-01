@@ -214,26 +214,25 @@ func BuildExpressions(prog *Program) error {
 				swapFrom, swapTo := reaching[0], reaching[len(reaching)-1]
 				leftLifted := len(swapFrom) == 1 && lifted[*swapFrom.First()]
 				rightLifted := len(swapTo) == 1 && lifted[*swapTo.First()]
+                                if leftLifted {
+                                    delete(lifted, *swapFrom.First())
+                                }
+                                if rightLifted {
+                                    delete(lifted, *swapTo.First())
+                                }		
+				count := 0
 				if len(reaching) > 2 || (!leftLifted && !rightLifted) {
-					// One side only is lifted; resolve by making arg explicit again
-					if leftLifted && !rightLifted {
-						delete(lifted, *swapFrom.First())
-					} else if !leftLifted && rightLifted {
-						delete(lifted, *swapTo.First())
-					}
-
 					if !leftLifted || !rightLifted {
 						// Count number of non-lifted elements between the operands
-						count := 0
 						for i := 1; i < len(reaching)-1; i++ {
 							if len(reaching[i]) != 1 || !lifted[*reaching[i].First()] {
 								count += 1
 							}
 						}
-						var expression Expression = &SwapExpression{count + 1}
-						inst.Annotations.Set(&expression)
 					}
 				}
+				var expression Expression = &SwapExpression{count + 1}
+				inst.Annotations.Set(&expression)				
 			} else if inst.Op.IsDup() {
 				// Try and reduce the size of dup operations to account for lifted arguments
 
