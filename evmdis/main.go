@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -32,6 +33,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Could not read from stdin: %v", err))
 	}
+	hexdata = bytes.TrimSpace(hexdata)
 
 	// disassemble
 	bytecode := make([]byte, hex.DecodedLen(len(hexdata)))
