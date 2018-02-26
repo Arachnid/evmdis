@@ -78,10 +78,16 @@ func (self *InstructionExpression) String() string {
 	}
 }
 
-type PopExpression struct{}
+type PopExpression struct{
+	Inst      *InstructionPointer
+}
 
 func (self *PopExpression) String() string {
-	return "POP()"
+	if self.Inst != nil {
+		return "POP("+self.Inst.String()+")"
+	} else {
+		return "POP()"
+	}
 }
 
 func (self *PopExpression) Eval() *big.Int {
@@ -270,7 +276,12 @@ func BuildExpressions(prog *Program) error {
 							// If there's more than one definition reaching the argument
 							// or it's not in our set of expression fragments, represent it
 							// as a stack pop.
-							args = append(args, &PopExpression{})
+							var expression = &PopExpression{}
+							if len(pointers) == 1 {
+								expression.Inst = pointers.First()
+							}
+							var converted = Expression(expression)
+							args = append(args, converted)
 						} else {
 							// Inline this argument's expression
 							sourcePointer := pointers.First()
