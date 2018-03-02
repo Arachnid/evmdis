@@ -78,10 +78,16 @@ func (self *InstructionExpression) String() string {
 	}
 }
 
-type PopExpression struct{}
+type PopExpression struct{
+	Inst      *InstructionPointer
+}
 
 func (self *PopExpression) String() string {
-	return "POP()"
+	if self.Inst != nil {
+		return "POP("+self.Inst.String()+")"
+	} else {
+		return "POP()"
+	}
 }
 
 func (self *PopExpression) Eval() *big.Int {
@@ -214,26 +220,25 @@ func BuildExpressions(prog *Program) error {
 				swapFrom, swapTo := reaching[0], reaching[len(reaching)-1]
 				leftLifted := len(swapFrom) == 1 && lifted[*swapFrom.First()]
 				rightLifted := len(swapTo) == 1 && lifted[*swapTo.First()]
+                                if leftLifted {
+                                    delete(lifted, *swapFrom.First())
+                                }
+                                if rightLifted {
+                                    delete(lifted, *swapTo.First())
+                                }		
+				count := 0
 				if len(reaching) > 2 || (!leftLifted && !rightLifted) {
-					// One side only is lifted; resolve by making arg explicit again
-					if leftLifted && !rightLifted {
-						delete(lifted, *swapFrom.First())
-					} else if !leftLifted && rightLifted {
-						delete(lifted, *swapTo.First())
-					}
-
 					if !leftLifted || !rightLifted {
 						// Count number of non-lifted elements between the operands
-						count := 0
 						for i := 1; i < len(reaching)-1; i++ {
 							if len(reaching[i]) != 1 || !lifted[*reaching[i].First()] {
 								count += 1
 							}
 						}
-						var expression Expression = &SwapExpression{count + 1}
-						inst.Annotations.Set(&expression)
 					}
 				}
+				var expression Expression = &SwapExpression{count + 1}
+				inst.Annotations.Set(&expression)				
 			} else if inst.Op.IsDup() {
 				// Try and reduce the size of dup operations to account for lifted arguments
 
@@ -270,7 +275,12 @@ func BuildExpressions(prog *Program) error {
 							// If there's more than one definition reaching the argument
 							// or it's not in our set of expression fragments, represent it
 							// as a stack pop.
-							args = append(args, &PopExpression{})
+							var expression = &PopExpression{}
+							if len(pointers) == 1 {
+								expression.Inst = pointers.First()
+							}
+							var converted = Expression(expression)
+							args = append(args, converted)
 						} else {
 							// Inline this argument's expression
 							sourcePointer := pointers.First()
@@ -287,7 +297,7 @@ func BuildExpressions(prog *Program) error {
 
 				var reaches ReachesDefinition
 				inst.Annotations.Get(&reaches)
-				if len(reaches) == 1 && reaches[0].OriginBlock == block {
+				if len(reaches) == 1 && reaches[0].OriginBlock == block && !inst.Op.HasSideEffects() {
 					// 'Lift' this definition out of the stack, since we know it'll be consumed
 					// later in this block (and only there)
 					ptr := InstructionPointer{block, i}
