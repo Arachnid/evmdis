@@ -78,6 +78,9 @@ const (
 	XOR
 	NOT
 	BYTE
+	SHL
+	SHR
+	SAR
 
 	SHA3 = 0x20
 )
@@ -242,6 +245,9 @@ var opCodeToString = map[OpCode]string{
 	OR:     "OR",
 	XOR:    "XOR",
 	BYTE:   "BYTE",
+	SHL:    "SHL",
+	SHR:    "SHR",
+	SAR:    "SAR",
 	ADDMOD: "ADDMOD",
 	MULMOD: "MULMOD",
 
@@ -406,6 +412,9 @@ var opCodeToStackReads = map[OpCode]int{
 	OR:     2,
 	XOR:    2,
 	BYTE:   2,
+	SHL:    2,
+	SHR:    2,
+	SAR:    2,
 	ADDMOD: 3,
 	MULMOD: 3,
 
@@ -565,6 +574,9 @@ var opCodeToStackWrites = map[OpCode]int{
 	OR:     1,
 	XOR:    1,
 	BYTE:   1,
+	SHL:    1,
+	SHR:    1,
+	SAR:    1,
 	ADDMOD: 1,
 	MULMOD: 1,
 
@@ -721,6 +733,9 @@ var stringToOp = map[string]OpCode{
 	"OR":           OR,
 	"XOR":          XOR,
 	"BYTE":         BYTE,
+	"SHL":          SHL,
+	"SHR":          SHR,
+	"SAR":          SAR,
 	"ADDMOD":       ADDMOD,
 	"MULMOD":       MULMOD,
 	"SHA3":         SHA3,
