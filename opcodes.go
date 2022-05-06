@@ -209,6 +209,7 @@ const (
 	CALLCODE
 	RETURN
 	DELEGATECALL
+	CREATE2
 
 	INVALID      = 0xfe
 	REVERT       = 0xfd
@@ -368,6 +369,7 @@ var opCodeToString = map[OpCode]string{
 	INVALID:      "INVALID",
 	REVERT:       "REVERT",
 	SELFDESTRUCT: "SELFDESTRUCT",
+	CREATE2:      "CREATE2",
 }
 
 func (o OpCode) String() string {
@@ -531,6 +533,7 @@ var opCodeToStackReads = map[OpCode]int{
 	INVALID:      0,
 	REVERT:       0,
 	SELFDESTRUCT: 1,
+	CREATE2:      4,
 }
 
 func (o OpCode) StackReads() int {
@@ -689,6 +692,7 @@ var opCodeToStackWrites = map[OpCode]int{
 	INVALID:      0,
 	REVERT:       0,
 	SELFDESTRUCT: 0,
+	CREATE2:      1,
 }
 
 func (o OpCode) StackWrites() int {
@@ -828,6 +832,7 @@ var stringToOp = map[string]OpCode{
 	"INVALID":      INVALID,
 	"REVERT":       REVERT,
 	"SELFDESTRUCT": SELFDESTRUCT,
+	"CREATE2":      CREATE2,
 }
 
 func StringToOp(str string) OpCode {
