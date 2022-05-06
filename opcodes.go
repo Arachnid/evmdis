@@ -111,6 +111,9 @@ const (
 	NUMBER
 	DIFFICULTY
 	GASLIMIT
+	CHAINID
+	SELFBALANCE
+	BASEFEE
 )
 
 const (
@@ -274,6 +277,9 @@ var opCodeToString = map[OpCode]string{
 	NUMBER:      "NUMBER",
 	DIFFICULTY:  "DIFFICULTY",
 	GASLIMIT:    "GASLIMIT",
+	CHAINID:     "CHAINID",
+	SELFBALANCE: "SELFBALANCE",
+	BASEFEE:     "BASEFEE",
 	EXTCODESIZE: "EXTCODESIZE",
 	EXTCODECOPY: "EXTCODECOPY",
 
@@ -441,6 +447,9 @@ var opCodeToStackReads = map[OpCode]int{
 	NUMBER:      0,
 	DIFFICULTY:  0,
 	GASLIMIT:    0,
+	CHAINID:     0,
+	SELFBALANCE: 0,
+	BASEFEE:     0,
 	EXTCODESIZE: 1,
 	EXTCODECOPY: 4,
 
@@ -603,6 +612,9 @@ var opCodeToStackWrites = map[OpCode]int{
 	NUMBER:      1,
 	DIFFICULTY:  1,
 	GASLIMIT:    1,
+	CHAINID:     1,
+	SELFBALANCE: 1,
+	BASEFEE:     1,
 	EXTCODESIZE: 1,
 	EXTCODECOPY: 0,
 
@@ -757,6 +769,9 @@ var stringToOp = map[string]OpCode{
 	"NUMBER":       NUMBER,
 	"DIFFICULTY":   DIFFICULTY,
 	"GASLIMIT":     GASLIMIT,
+	"CHAINID":      CHAINID,
+	"SELFBALANCE":  SELFBALANCE,
+	"BASEFEE":      BASEFEE,
 	"EXTCODESIZE":  EXTCODESIZE,
 	"EXTCODECOPY":  EXTCODECOPY,
 	"POP":          POP,
